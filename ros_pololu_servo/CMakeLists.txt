@@ -127,6 +127,7 @@ add_library(ros_pololu_servo
 ## Declare a cpp executable
 add_executable(ros_pololu_servo_node src/pololu_controller_node.cpp)
 add_executable(teleop_servo_key src/teleop_servo_key.cpp)
+
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
 #add_dependencies(ros_pololu_servo_node)
@@ -143,6 +144,8 @@ target_link_libraries(ros_pololu_servo_node
    yaml-cpp
  )
 target_link_libraries(teleop_servo_key ${catkin_LIBRARIES})
+
+
 #############
 ## Install ##
 #############

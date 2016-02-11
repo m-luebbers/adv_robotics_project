@@ -122,6 +122,7 @@ void PololuController::publish_motor_state()
 
         Motor motor;
         motor = (iterator->second);
+//	ROS_INFO_THROTTLE(1, "pulse1 %d", pulse);
 
         //nab the pulse from the interface based on the motor_id we're requesting about.
         if(daisy_chain)
@@ -135,7 +136,7 @@ void PololuController::publish_motor_state()
 
        //he's dividing by four to convert Maestro's PWM pulse to what we're working with.
         pulse = pulse * 0.25;
-
+  //      ROS_INFO_THROTTLE(1, "pulse %d", pulse);
 	
         motor_state.name = motor.name;
         motor_state.pololu_id = motor.pololu_id;
@@ -155,6 +156,8 @@ void PololuController::publish_motor_state()
         motor_state.calibration.max_degrees = to_degrees(motor_state.calibration.max_radians);
 
         motor_state_list.motor_states.push_back(motor_state);
+//      ROS_INFO_THROTTLE(1, "min pulse, min rad, %d, %f", motor_state.calibration.min_pulse, motor_state.calibration.min_radians);
+//	ROS_INFO_THROTTLE(1, "max pulse, max rad, %d, %f", motor_state.calibration.max_pulse, motor_state.calibration.max_radians);
     }
 
     motor_state_list_pub.publish(motor_state_list);
@@ -225,6 +228,10 @@ void PololuController::motor_command_callback(const MotorCommand::ConstPtr& msg)
         double new_max = std::max(min, max);
         double new_position = msg->position;
 
+	ROS_INFO_THROTTLE(1, "Min %f", min);
+        ROS_INFO_THROTTLE(1, "New min %f", new_min);
+	ROS_INFO_THROTTLE(1, "Max %f", max);
+	ROS_INFO_THROTTLE(1, "New max %f", new_max);
 
         if((new_min - 0.001) > new_position)
         {

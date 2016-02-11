@@ -16,21 +16,24 @@ class TeleopServo
 public:
   TeleopServo();
   void keyLoop();
+  double pos = 0, throttle = 0;
+  float r_pos;
+  void motorstateCallback(const ros_pololu_servo::MotorStateList::ConstPtr& msg);
 
 private:
-
-  
   ros::NodeHandle nh_;
-  double pos;//double linear_, angular_, l_scale_, a_scale_;
-  ros::Publisher command_pub;
-  
+  ros::Subscriber sub_; // = nh_.subscribe("pololu/motor_states", 1, &TeleopServo::motorstateCallback, &teleop_servo);
+  ros::Publisher command_pub_;// = nh_.advertise<ros_pololu_servo::MotorCommand>("pololu/command", 1);
+
 };
 
 TeleopServo::TeleopServo():
-	pos(0)
+r_pos(0)
 {
-  command_pub = nh_.advertise<ros_pololu_servo::MotorCommand>("pololu/command", 1);
+sub_ = nh_.subscribe("pololu/motor_states", 1, &TeleopServo::motorstateCallback, this);
+command_pub_ = nh_.advertise<ros_pololu_servo::MotorCommand>("pololu/command", 1);
 }
+
 
 int kfd = 0;
 struct termios cooked, raw;
@@ -43,16 +46,21 @@ void quit(int sig)
   exit(0);
 }
 
+void TeleopServo::motorstateCallback(const ros_pololu_servo::MotorStateList::ConstPtr& msg)
+{
+  r_pos = msg->motor_states[1].radians; //received position
+}
 
 int main(int argc, char** argv)
 {
-  ros::init(argc, argv, "teleop_servo_key");
-  TeleopServo teleop_servo;
-
-  signal(SIGINT,quit);
-
-  teleop_servo.keyLoop();
   
+  ros::init(argc, argv, "teleop_servo_key");
+//  ros::NodeHandle nh_;
+  TeleopServo teleop_servo;
+//  command_pub = nh_.advertise<ros_pololu_servo::MotorCommand>("pololu/command", 1);
+ // ros::Subscriber sub = nh_.subscribe("pololu/motor_states", 1, &TeleopServo::motorstateCallback, &teleop_servo);
+  signal(SIGINT,quit);
+  teleop_servo.keyLoop();
   return(0);
 }
 
@@ -76,9 +84,11 @@ void TeleopServo::keyLoop()
   puts("---------------------------");
   puts("Use arrow keys to move the car.");
 
-
+ // ROS_INFO_THROTTLE(1,"Hi %f",r_pos);
   for(;;)
   {
+   // ROS_INFO_THROTTLE(1,"Hi %f",r_pos);
+
     // get the next event from the keyboard  
     if(read(kfd, &c, 1) < 0)
     {
@@ -86,45 +96,61 @@ void TeleopServo::keyLoop()
       exit(-1);
     }
 
-   // linear_=angular_=0;
     ROS_DEBUG("value: 0x%02X\n", c);
-    
-    switch(c)
-    {
-      case KEYCODE_L:
-        ROS_DEBUG("LEFT");
-        pos = -0.3;
-        break;
-      case KEYCODE_R:
-        ROS_DEBUG("RIGHT");
-        pos = 0.3;
-        break;
-      case KEYCODE_U:
-       // ROS_DEBUG("UP");
-       // linear_ = 1.0;
-       // dirty = true;
-        break;
-      case KEYCODE_D:
-       // ROS_DEBUG("DOWN");
-       // linear_ = -1.0;
-       //dirty = true;
-        break;
-    }
-   
 
-    ros_pololu_servo::MotorCommand msg;
-    msg.joint_name = "servo";
-    msg.position = pos;
-    msg.speed = 0.1;
-    msg.acceleration = 0.0;
-    command_pub.publish(msg);
-    //twist.angular.z = a_scale_*angular_;
-    //twist.linear.x = l_scale_*linear_;
-   // if(dirty ==true)
+   // key_flag = 0 when left or right is pressed, key_flag = 1 when up or down is pressed 
+   int key_flag = -1;
+   
+   // if(pos>=-0.549779 && pos<=0.549779)
    // {
-    //  twist_pub_.publish(twist);    
-     // dirty=false;
-   // }
+  	switch(c)
+       	{
+       	  case KEYCODE_L:
+            ROS_DEBUG("LEFT");
+            key_flag = 0;
+            pos = pos - 0.1;
+		if(pos<-0.549779 || pos>0.549779)
+			pos = pos + 0.1;
+            break;
+          case KEYCODE_R:
+            ROS_DEBUG("RIGHT");
+            key_flag = 0;
+            pos = pos + 0.1;
+		if(pos<-0.549779 || pos>0.549779)
+                        pos = pos - 0.1;
+          break;
+          case KEYCODE_U:
+            ROS_DEBUG("UP");
+            key_flag = 1;
+            throttle = throttle + 0.05;
+		if(throttle>0.5)
+                        throttle = throttle - 0.05;
+            break;
+          case KEYCODE_D:
+            ROS_DEBUG("DOWN");
+            key_flag = 1;
+            throttle = throttle - 0.05;
+                if(throttle<-0.5)
+                        throttle = throttle + 0.05;
+            break;
+        }
+   
+    ros_pololu_servo::MotorCommand msg;
+    if(key_flag == 0) {
+    	msg.joint_name = "servo";
+        msg.position = pos;
+        msg.speed = 0.1;
+        msg.acceleration = 0.0;
+        command_pub_.publish(msg);
+    }
+    else if(key_flag == 1) {
+        msg.joint_name = "motor";
+        msg.position = throttle;
+        msg.speed = 0.1;
+        msg.acceleration = 0.0;
+        command_pub_.publish(msg);
+    }
+        ros::spinOnce();
   }
 
 
