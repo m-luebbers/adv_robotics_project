@@ -21,29 +21,31 @@ servo_commands.speed = 0
 servo_commands.acceleration = 0
 
 
-pub = rospy.Publisher('/command', MotorCommand, queue_size=10)
+pub = rospy.Publisher('/pololu/command', MotorCommand, queue_size=10)
 #pub = rospy.Publisher('/drive', AckermannDriveStamped, queue_size=10)
 
     # rate.sleep()    
 
 def callback(data):
+    global servo_commands
     lx = len(data.data)
     x_red = []
-    N = 3
+    N = 5
     for ix in range(N):
 	bin_vals = data.data[int(round(lx*ix/N)):int(round(lx*(ix+1)/N))]
 	x_red.append(np.average([x for x in bin_vals if x >= 10]))
     #x_red[0] is far left and x_red[end] is far right
     #Min value is 100 for reading
     #Servo -0.54 to + 0.54
-    if x_red[0] < 500 and x_red[1] > 500 and x_red[2] > 500:
-        servo_commands.position = -0.5
-    elif x_red[0] > 500 and x_red[1] > 500 and x_red[2] > 500:
-        servo_commands.position = 0
-    elif x_red[0] > 500 and x_red[1] > 500 and x_red[2] < 500:
+    th = 800
+    if x_red[0] < th and x_red[2] > th and x_red[4] > th:
         servo_commands.position = 0.5
+    elif x_red[0] > th and x_red[2] > th and x_red[4] > th:
+        servo_commands.position = 0
+    elif x_red[0] > th and x_red[2] > th and x_red[4] < th:
+        servo_commands.position = -0.5
     else:
-        servo_commands = 0
+        servo_commands.position = 0
     pub.publish(servo_commands)    
     print("ranges left to right", x_red)
 
