@@ -93,7 +93,7 @@ def callback(data):
 		if time_elapsed > 3: 		# wait a while before slowing down and turning
 			drive_commands.acceleration = 0.02
 			drive_commands.position = drive_commands.position*1.5/time_elapsed	# *2 worked pretty well
-			if max(x) < 9.5:		# start turning when all values are below a threshold 
+			if max(x) < 10:		# start turning when all values are below a threshold 
 				print("state 1.5")
 				car_state = 1.5
 				time_start = time.time()
@@ -129,7 +129,7 @@ def callback(data):
 			s_angle = TURN_ANGLE
 			drive_commands.position = 0.1
 			print("Yo need to sloooow the fuck down too damn fast again")
-		elif time_elapsed < 1:
+		elif time_elapsed < 0.9:
 			#s_angle = TURN_ANGLE
 			drive_commands.acceleration = 0.01
 			drive_commands.position = 0.1 
