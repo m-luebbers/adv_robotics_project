@@ -1,0 +1,12 @@
+<launch>
+    <include file="$(find ros_pololu_servo)/launch/pololu.launch"/>
+    <node pkg="rs_custom" name="rs_custom_node" type="rs_custom_node" output="screen">
+		<param name="depth_width" value="640"/>
+		<param name="depth_height" value="480"/>
+		<param name="depth_fps" value="60"/>
+		<!-- param name="n_rows" value="3" /> -->
+		<!-- param name="dn_rows" value="5" /> -->
+	</node>
+    <!-- <node pkg="racecar_simulator" name="Midterm" type="Midterm.py" /> -->
+</launch>
+

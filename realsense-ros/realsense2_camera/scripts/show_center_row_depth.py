@@ -25,7 +25,7 @@ class ImageListener:
             depth_row.data = []
             #For a full row
             for i in range(data.width):
-		N = 3   # how many rows to average
+		N = 1   # how many rows to average
 		n = 5    # how many rows to skip
 		vals = [cv_image[pix[1]-ix*n,i] for ix in range(N) if cv_image[pix[1]-ix*n,i] != 0]
 		if len(vals) > 0:

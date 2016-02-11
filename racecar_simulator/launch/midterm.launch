@@ -1,5 +1,5 @@
 <launch>
-    <include file="$(find realsense2_camera)/launch/rs_camera.launch"/>
+    <!-- include file="$(find realsense2_camera)/launch/rs_camera.launch"/ -->
     <include file="$(find ros_pololu_servo)/launch/pololu.launch"/>
     <node pkg="realsense2_camera" name="show_center_row_depth" type="show_center_row_depth.py"/>
     <!-- <node pkg="racecar_simulator" name="Midterm" type="Midterm.py" /> -->

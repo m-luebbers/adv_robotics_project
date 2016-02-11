@@ -50,9 +50,9 @@ def PID(servo_error, previous_angle, dt):
     global error_previous
 
     max_angle = 0.54-.14
-    kp = 0.01*2.5
+    kp = 0.01
     ki = 0.00
-    kd = 0.01*3
+    kd = 0.01
     error_I += servo_error*dt
     error_D = (servo_error-error_previous)/dt
     u = (kp*servo_error + ki*error_I + kd*error_D)
@@ -96,7 +96,7 @@ def callback(data):
 #	    else:
 #		x.append(100)
 
-    x_zeroless = [ix/1000 for ix in data.data if ix != 0]
+    x_zeroless = [ix for ix in data.data if ix != 0]
     lx = len(x_zeroless)
     for ix in range(N):
 	    bin_vals = x_zeroless[int(round(lx*ix/N)):int(round(lx*(ix+1)/N))]
@@ -175,11 +175,11 @@ def callback(data):
 	print("waiting")
 #	time.sleep(.2)
     #pub.publish(drive_commands)
-#    print("d_x_turn",d_x_turn)
-#    print("car_state",car_state)
-#    print(" X_right = ", x_right,"X_mid = ", x_mid, " X Left = ", x_left)
- #   print("s_angle =", s_angle)
-#    print("-------------------------")
+    print("d_x_turn",d_x_turn)
+    print("car_state",car_state)
+    print(" X_right = ", x_right,"X_mid = ", x_mid, " X Left = ", x_left)
+    print("s_angle =", s_angle)
+    print("-------------------------")
 #    print("d_x_right", d_x_right)
 def depth_data_processor():
     #Data from the realsense
