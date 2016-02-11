@@ -12,7 +12,7 @@ class ImageListener:
         self.topic = topic
         self.bridge = CvBridge()
         self.sub = rospy.Subscriber(topic, msg_Image, self.imageDepthCallback)
-        self.pub = rospy.Publisher('depth_row', Float32MultiArray, queue_size=10)
+        self.pub = rospy.Publisher('depth_row', Float32MultiArray, queue_size=1)
 
     def imageDepthCallback(self, data):
         try:
@@ -25,17 +25,28 @@ class ImageListener:
             depth_row.data = []
             #For a full row
             for i in range(data.width):
-		count = 3.0
-		if(cv_image[pix[1],i] == 0.0):
-			count = count - 1.0
-                if(cv_image[pix[1]-5,i] == 0.0):
-			count = count - 1.0
-		if(cv_image[pix[1]-10,i] == 0.0):
-			count = count - 1.0
-		if(count == 0.0):
-			depth_row.data = np.append(depth_row.data, 0.0)
+		N = 3   # how many rows to average
+		n = 5    # how many rows to skip
+		vals = [cv_image[pix[1]-ix*n,i] for ix in range(N) if cv_image[pix[1]-ix*n,i] != 0]
+		if len(vals) > 0:
+			depth_row.data = np.append(depth_row.data, np.average(vals))
 		else:
-			depth_row.data = np.append(depth_row.data, ((cv_image[pix[1],i]+cv_image[pix[1]-5,i]+cv_image[pix[1]-10,i])/count))
+			depth_row.data = np.append(depth_row.data, 0.0)
+		#count = 5.0
+		#if(cv_image[pix[1],i] == 0.0):
+		#	count = count - 1.0
+                #if(cv_image[pix[1]-5,i] == 0.0):
+		#	count = count - 1.0
+		#if(cv_image[pix[1]-10,i] == 0.0):
+		#	count = count - 1.0
+		#if(cv_image[pix[1]-15,i] == 0.0):
+		#	count = count - 1.0
+		#if(cv_image[pix[1]-20,i] == 0.0):
+		#	count = count - 1.0
+		#if(count == 0.0):
+		#	depth_row.data = np.append(depth_row.data, 0.0)
+		#else:
+		#	depth_row.data = np.append(depth_row.data, ((cv_image[pix[1],i]+cv_image[pix[1]-5,i]+cv_image[pix[1]-10,i]+cv_image[pix[1]-15,i]+cv_image[pix[1]-20,i])/count))
                 #Gets all the values from three discrete rows from the middle up and averages them
 		#depth_row.data = np.append(depth_row.data, cv_image[pix[1],i])
                # depth_row.data = np.append(depth_row.data, ((cv_image[pix[1],i]+cv_image[pix[1]-5,i]+cv_image[pix[1]-10,i])/3.0))
