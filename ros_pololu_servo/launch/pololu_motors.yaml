@@ -1,0 +1,29 @@
+# Pololu based motors
+
+servo:
+  pololu_id: 18
+
+  motor_id: 5
+  init: 1500
+  min: 992
+  max: 2000
+  reverse: false
+  calibration:
+    min_pulse: 1000
+    min_angle: -45
+    max_pulse: 2000
+    max_angle: 45
+
+motor:
+  pololu_id: 18
+
+  motor_id: 6
+  init: 1400
+  min: 992
+  max: 2000
+  reverse: false
+  calibration:
+    min_pulse: 1000
+    min_angle: -45
+    max_pulse: 2000
+    max_angle: 45
