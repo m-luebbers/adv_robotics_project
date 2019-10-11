@@ -96,7 +96,10 @@ bool PololuController::motor_range_callback(MotorRange::Request &req, MotorRange
         res.min = PololuMath::to_radians(motor.min, motor);
         res.max = PololuMath::to_radians(motor.max, motor);
         res.direction = motor.direction;
-        return true;
+        
+	ROS_INFO_THROTTLE(1,"Motor min %d", motor.min);
+	ROS_INFO_THROTTLE(1,"Motor max %d", motor.max);
+	return true;
     }
     else
     {
@@ -187,12 +190,14 @@ void PololuController::motor_command_callback(const MotorCommand::ConstPtr& msg)
     Motor motor;
     if(iterator != motors.end()){
       motor = motors[msg->joint_name];
+      ROS_INFO_THROTTLE(1, "Check");
     }else{
       int motor_id = std::atoi(msg->joint_name.c_str());
 
       if (motor_id == 0 && msg->joint_name != "0" ){
         success = false;
       }else{
+	ROS_INFO_THROTTLE(1, "Accessing default motor");
         motor = default_motor();
         motor.motor_id = motor_id;
       }
@@ -213,7 +218,7 @@ void PololuController::motor_command_callback(const MotorCommand::ConstPtr& msg)
             send_commands = false;
             ROS_ERROR("trying to set motor %s acceleration is %f (should be between 0.0 - 1.0)", msg->joint_name.c_str(), msg->acceleration);
         }
-
+	
         double min = PololuMath::to_radians(motor.min, motor);
         double max = PololuMath::to_radians(motor.max, motor);
         double new_min = std::min(min, max);
@@ -238,7 +243,7 @@ void PololuController::motor_command_callback(const MotorCommand::ConstPtr& msg)
 
             double speed = PololuMath::interpolate(msg->speed, 0.0, 1.0, 0, 255.0); //Set speed, make sure doesn't below 0, which is max speed
             double acceleration = PololuMath::interpolate(msg->acceleration, 0.0, 1.0, 0, 255.0); //Set acceleration, make sure doesn't go below 0, which is max acceleration
-            double pulse_m = PololuMath::clamp(pulse * 4.0, 3280, 8700);
+            double pulse_m = PololuMath::clamp(pulse * 4.0, motor.min * 4.0, motor.max * 4.0);
 
             if(daisy_chain)
             {
@@ -261,4 +266,3 @@ void PololuController::motor_command_callback(const MotorCommand::ConstPtr& msg)
         ROS_ERROR("motor %s hasn't been loaded into pololu_config", msg->joint_name.c_str());
     }
 }
-

@@ -5,8 +5,8 @@ servo:
 
   motor_id: 5
   init: 1500
-  min: 992
-  max: 2000
+  min: 1150
+  max: 1850
   reverse: false
   calibration:
     min_pulse: 1000
