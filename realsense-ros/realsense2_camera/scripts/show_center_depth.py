@@ -22,7 +22,7 @@ class ImageListener:
             for i in range(data.height):
                 #Gets all the values of a single row in the middle of the frame
                 depth_row = np.append(depth_row,cv_image[pix[1],i])
-            sys.stdout.write('%s: Depth at center Row: %f(mm)/n' % (self.topic, depth_row))
+            sys.stdout.write('%s: Depth at center Row: %f(mm)\n' % (self.topic, depth_row))
             #####
             sys.stdout.flush()
         except CvBridgeError as e:
