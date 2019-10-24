@@ -4,8 +4,6 @@
 #include <algorithm>
 #include <cctype>
 #include <mutex>
-#include <tf/transform_broadcaster.h>
-#include <thread>
 
 using namespace realsense2_camera;
 using namespace ddynamic_reconfigure;
@@ -82,7 +80,7 @@ BaseRealSenseNode::BaseRealSenseNode(ros::NodeHandle& nodeHandle,
                                      ros::NodeHandle& privateNodeHandle,
                                      rs2::device dev,
                                      const std::string& serial_no) :
-    _base_frame_id(""),  _node_handle(nodeHandle),
+    _is_running(true), _base_frame_id(""),  _node_handle(nodeHandle),
     _pnh(privateNodeHandle), _dev(dev), _json_file_path(""),
     _serial_no(serial_no),
     _is_initialized_time_base(false),
@@ -96,6 +94,8 @@ BaseRealSenseNode::BaseRealSenseNode(ros::NodeHandle& nodeHandle,
     _depth_aligned_encoding[RS2_STREAM_DEPTH] = sensor_msgs::image_encodings::TYPE_16UC1;
 
     // Infrared stream
+    _format[RS2_STREAM_INFRARED] = RS2_FORMAT_Y8;
+
     _image_format[RS2_STREAM_INFRARED] = CV_8UC1;    // CVBridge type
     _encoding[RS2_STREAM_INFRARED] = sensor_msgs::image_encodings::MONO8; // ROS message type
     _unit_step_size[RS2_STREAM_INFRARED] = sizeof(uint8_t); // sensor_msgs::ImagePtr row step size
@@ -124,6 +124,20 @@ BaseRealSenseNode::BaseRealSenseNode(ros::NodeHandle& nodeHandle,
     _stream_name[RS2_STREAM_POSE] = "pose";
 
     _monitor_options = {RS2_OPTION_ASIC_TEMPERATURE, RS2_OPTION_PROJECTOR_TEMPERATURE};
+}
+
+BaseRealSenseNode::~BaseRealSenseNode()
+{
+    // Kill dynamic transform thread
+    if (_publish_tf && _tf_publish_rate > 0)
+        _tf_t->join();
+
+    _is_running = false;
+    _cv.notify_one();
+    if (_monitoring_t && _monitoring_t->joinable())
+    {
+        _monitoring_t->join();
+    }
 }
 
 void BaseRealSenseNode::toggleSensors(bool enabled)
@@ -521,6 +535,9 @@ void BaseRealSenseNode::getParameters()
     _pnh.param("filters", _filters_str, DEFAULT_FILTERS);
     _pointcloud |= (_filters_str.find("pointcloud") != std::string::npos);
 
+    _pnh.param("publish_tf", _publish_tf, PUBLISH_TF);
+    _pnh.param("tf_publish_rate", _tf_publish_rate, TF_PUBLISH_RATE);
+
     _pnh.param("enable_sync", _sync_frames, SYNC_FRAMES);
     if (_pointcloud || _align_depth || _filters_str.size() > 0)
         _sync_frames = true;
@@ -902,6 +919,7 @@ void BaseRealSenseNode::enable_devices()
                     (_width[elem] == 0 || video_profile.width() == _width[elem]) &&
                     (_height[elem] == 0 || video_profile.height() == _height[elem]) &&
                     (_fps[elem] == 0 || video_profile.fps() == _fps[elem]) &&
+                    (_format.find(elem.first) == _format.end() || video_profile.format() == _format[elem.first] ) &&
                     video_profile.stream_index() == elem.second)
                 {
                     _width[elem] = video_profile.width();
@@ -912,7 +930,7 @@ void BaseRealSenseNode::enable_devices()
 
                     _image[elem] = cv::Mat(_height[elem], _width[elem], _image_format[elem.first], cv::Scalar(0, 0, 0));
 
-                    ROS_INFO_STREAM(STREAM_NAME(elem) << " stream is enabled - width: " << _width[elem] << ", height: " << _height[elem] << ", fps: " << _fps[elem]);
+                    ROS_INFO_STREAM(STREAM_NAME(elem) << " stream is enabled - width: " << _width[elem] << ", height: " << _height[elem] << ", fps: " << _fps[elem] << ", " << "Format: " << video_profile.format());
                     break;
                 }
             }
@@ -1804,7 +1822,7 @@ void BaseRealSenseNode::publish_static_tf(const ros::Time& t,
     msg.transform.rotation.y = q.getY();
     msg.transform.rotation.z = q.getZ();
     msg.transform.rotation.w = q.getW();
-    _static_tf_broadcaster.sendTransform(msg);
+    _static_tf_msgs.push_back(msg);
 }
 
 void BaseRealSenseNode::calcAndPublishStaticTransform(const stream_index_pair& stream, const rs2::stream_profile& base_profile)
@@ -1870,14 +1888,23 @@ void BaseRealSenseNode::SetBaseStream()
 
 void BaseRealSenseNode::publishStaticTransforms()
 {
-    // Publish static transforms
     rs2::stream_profile base_profile = getAProfile(_base_stream);
-    for (std::pair<stream_index_pair, bool> ienable : _enable)
+
+    // Publish static transforms
+    if (_publish_tf)
     {
-        if (ienable.second)
+        for (std::pair<stream_index_pair, bool> ienable : _enable)
         {
-            calcAndPublishStaticTransform(ienable.first, base_profile);
+            if (ienable.second)
+            {
+                calcAndPublishStaticTransform(ienable.first, base_profile);
+            }
         }
+        // Static transform for non-positive values
+        if (_tf_publish_rate > 0)
+            _tf_t = std::shared_ptr<std::thread>(new std::thread(boost::bind(&BaseRealSenseNode::publishDynamicTransforms, this)));
+        else
+            _static_tf_broadcaster.sendTransform(_static_tf_msgs);
     }
 
     // Publish Extrinsics Topics:
@@ -1918,6 +1945,26 @@ void BaseRealSenseNode::publishStaticTransforms()
         _depth_to_other_extrinsics_publishers[INFRA2].publish(rsExtrinsicsToMsg(ex, frame_id));
     }
 
+}
+
+void BaseRealSenseNode::publishDynamicTransforms()
+{
+    // Publish transforms for the cameras
+    ROS_WARN("Publishing dynamic camera transforms (/tf) at %g Hz", _tf_publish_rate);
+
+    ros::Rate loop_rate(_tf_publish_rate);
+
+    while (ros::ok())
+    {
+        // Update the time stamp for publication
+        ros::Time t = ros::Time::now();
+        for(auto& msg : _static_tf_msgs)
+            msg.header.stamp = t;
+
+        _dynamic_tf_broadcaster.sendTransform(_static_tf_msgs);
+
+        loop_rate.sleep();
+    }
 }
 
 void BaseRealSenseNode::publishIntrinsics()
@@ -2226,13 +2273,18 @@ void BaseRealSenseNode::startMonitoring()
     }
 
     int time_interval(10000);
-    std::thread t([=]() {
-        while(true) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(time_interval));
-            publish_temperature();
+    std::function<void()> func = [this, time_interval](){
+        std::mutex mu;
+        std::unique_lock<std::mutex> lock(mu);
+        while(_is_running) {
+            _cv.wait_for(lock, std::chrono::milliseconds(time_interval), [&]{return !_is_running;});
+            if (_is_running)
+            {
+                publish_temperature();
+            }
         }
-    });
-    t.detach();    
+    };
+    _monitoring_t = std::make_shared<std::thread>(func);
 }
 
 void BaseRealSenseNode::publish_temperature()
@@ -2243,8 +2295,15 @@ void BaseRealSenseNode::publish_temperature()
         rs2_option option(option_diag.first);
         if (sensor.supports(option))
         {
-            auto option_value = sensor.get_option(option);
-            option_diag.second->update(option_value);
+            try
+            {
+                auto option_value = sensor.get_option(option);
+                option_diag.second->update(option_value);
+            }
+            catch(const std::exception& e)
+            {
+                ROS_DEBUG_STREAM("Failed checking for temperature." << std::endl << e.what());
+            }
         }
     }
 }
