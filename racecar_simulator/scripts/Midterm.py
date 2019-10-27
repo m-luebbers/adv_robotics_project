@@ -78,7 +78,7 @@ def callback(data):
         if x_red[0] < 500 and x_red[1] < 500 and x_red[2] < 500 and x_red[3] < 500 and x_red[4] < 500:
             car_state = 0 # Stopping the car
     #State for turing the corner
-    elif car_state = 2:
+    elif car_state == 2:
         print("Turing this Bitch around dat corner")
         servo_commands.position = 0.1
         if x_red[0] < 2000 and x_red[2] > 5000 and x_red[-1] < 2000:
@@ -87,7 +87,7 @@ def callback(data):
         if x_red[0] < 500 and x_red[1] < 500 and x_red[2] < 500 and x_red[3] < 500 and x_red[4] < 500:
             car_state = 0 # Stopping the car
     #State for stopping the car
-    elif car_state = 0:
+    elif car_state == 0:
         print("Either we Won or We Fucked up")
         drive_commands.position = 0 #Set speed here
         drive_commands.speed = 0
