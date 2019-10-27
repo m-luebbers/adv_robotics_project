@@ -2,6 +2,7 @@
 import rospy
 from sensor_msgs.msg import Image as msg_Image
 from cv_bridge import CvBridge, CvBridgeError
+from std_msgs.msg import Float32MultiArray
 import sys
 import os
 import numpy as np
@@ -11,20 +12,24 @@ class ImageListener:
         self.topic = topic
         self.bridge = CvBridge()
         self.sub = rospy.Subscriber(topic, msg_Image, self.imageDepthCallback)
+	self.pub = rospy.Publisher('depth_row', Float32MultiArray, queue_size=10)
 
     def imageDepthCallback(self, data):
         try:
             cv_image = self.bridge.imgmsg_to_cv2(data, data.encoding)
             pix = (data.width/2, data.height/2)
             # sys.stdout.write('%s: Depth at center(%d, %d): %f(mm)\r' % (self.topic, pix[0], pix[1], cv_image[pix[1], pix[0]]))
-            depth_row = []
+	    depth_row = Float32MultiArray()
+            depth_row.data = []
             #For a full row
             for i in range(data.width):
                 #Gets all the values of a single row in the middle of the frame
-                depth_row = np.append(depth_row,cv_image[pix[1],i])
-            	sys.stdout.write('%s: Depth at center Row, Column %d: %f(mm)\n' % (self.topic, i, depth_row[i]))
+                depth_row.data = np.append(depth_row.data,cv_image[pix[1],i])
+            	#sys.stdout.write('%s: Depth at center Row, Column %d: %f(mm)\n' % (self.topic, i, depth_row[i]))
+		
             #####
-            sys.stdout.flush()
+            self.pub.publish(depth_row)           
+	    #sys.stdout.flush()
         except CvBridgeError as e:
             print(e)
             return
