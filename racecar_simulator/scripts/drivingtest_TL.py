@@ -32,8 +32,6 @@ def callback(data):
     x_mid = x[int(round(length_x*2/5)):int(round(length_x*3/5))]
     x_left_mid = x[int(round(length_x*3/5)):int(round(length_x*4/5))]
     x_left = x[int(round(length_x*4/5)):length_x]
-    # print("X" ,x)
-    # print("X_left",x_left)
     print("Average value of x_right", np.average(x_right))
     print("Average value of x_right_mid", np.average(x_right_mid))
     print("Average value of x_mid", np.average(x_mid))
@@ -91,15 +89,14 @@ def callback(data):
 
 def scanner(pub, drive_msg):
 
+    #This is for the simulator
     rospy.init_node("scanner")
-    # rate = rospy.Rate(10) # 10hz
     rospy.Subscriber('/scan', LaserScan, callback)
-    # rospy.spin()
+
 
 if __name__ == '__main__':
     try:
         scanner(pub,drive_msg)
-        # rospy.spin()
     except rospy.ROSInterruptException:
         pass
     rospy.spin()
