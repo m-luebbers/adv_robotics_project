@@ -20,18 +20,19 @@ servo_commands.position = 0
 servo_commands.speed = 0
 servo_commands.acceleration = 0
 
+
 pub = rospy.Publisher('/command', MotorCommand, queue_size=10)
+#pub = rospy.Publisher('/drive', AckermannDriveStamped, queue_size=10)
+
+    # rate.sleep()    
 
 def callback(data):
     lx = len(data.data)
-
     x_red = []
     N = 3
     for ix in range(N):
-        bin_vals = data[(round(lx*ix/N)):int(round(lx*(ix+1)/N))]
-        x_red[ix] = np.average([x for x in bin_vals if x >= 10])
-
-    print("Bin data",x_red)
+	bin_vals = data.data[int(round(lx*ix/N)):int(round(lx*(ix+1)/N))]
+	x_red.append(np.average([x for x in bin_vals if x >= 10]))
     #x_red[0] is far left and x_red[end] is far right
     #Min value is 100 for reading
     #Servo -0.54 to + 0.54
@@ -43,7 +44,8 @@ def callback(data):
         servo_commands.position = 0.5
     else:
         servo_commands = 0
-    pub.publish(servo_commands)
+    pub.publish(servo_commands)    
+    print("ranges left to right", x_red)
 
 
 def depth_data_processor():
