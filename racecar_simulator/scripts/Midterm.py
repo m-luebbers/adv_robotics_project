@@ -2,7 +2,7 @@
 import rospy
 from std_msgs.msg import Float32MultiArray
 # from ackermann_msgs.msg import AckermannDriveStamped
-from ros_pololu_servo import MotorCommand
+from ros_pololu_servo.msg import MotorCommand
 # from sensor_msgs.msg import LaserScan
 import numpy as np
 servo_commands = MotorCommand()
@@ -15,19 +15,35 @@ servo_commands.joint_name = 'servo' #Check name here
 drive_commands.joint_name = 'drive' #Check name here
 drive_commands.position = 0
 drive_commands.speed = 0
-drive_commands.acceleration = 
+drive_commands.acceleration = 0
 servo_commands.position = 0
+servo_commands.speed = 0
+servo_commands.acceleration = 0
 
-
-
-pub = rospy.Publisher('/drive', AckermannDriveStamped, queue_size=10)
-
-    # rate.sleep()    
+pub = rospy.Publisher('/command', MotorCommand, queue_size=10)
 
 def callback(data):
-    rospy.loginfo(rospy.get_caller_id() + "I heard %s", data)
-     x = data
-     print(x)
+    lx = len(data.data)
+
+    x_red = []
+    N = 3
+    for ix in range(N):
+        bin_vals = data[(round(lx*ix/N)):int(round(lx*(ix+1)/N))]
+        x_red[ix] = np.average([x for x in bin_vals if x >= 10])
+
+    print("Bin data",x_red)
+    #x_red[0] is far left and x_red[end] is far right
+    #Min value is 100 for reading
+    #Servo -0.54 to + 0.54
+    if x_red[0] < 500 and x_red[1] > 500 and x_red[2] > 500:
+        servo_commands.position = -0.5
+    elif x_red[0] > 500 and x_red[1] > 500 and x_red[2] > 500:
+        servo_commands.position = 0
+    elif x_red[0] > 500 and x_red[1] > 500 and x_red[2] < 500:
+        servo_commands.position = 0.5
+    else:
+        servo_commands = 0
+    pub.publish(servo_commands)
 
 
 def depth_data_processor():
