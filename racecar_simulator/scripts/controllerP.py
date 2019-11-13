@@ -14,16 +14,17 @@ drive_commands = MotorCommand()
     # DC Motor Min 0.1 Max 0.45 (0.62 but we don't see a change)
 servo_commands.joint_name = 'servo' #Check name here
 drive_commands.joint_name = 'motor' #Check name here
-drive_commands.position = 0.05 #Set speed here
+drive_commands.position = 0 #Set speed here
 drive_commands.speed = 0
 drive_commands.acceleration = 0
 servo_commands.position = 0
 servo_commands.speed = 0
 servo_commands.acceleration = 0
 turn_number = 0
+s_angle = 0
 
 #State Machine Variable
-car_state = 1
+car_state = 2
 
 pub = rospy.Publisher('/pololu/command', MotorCommand, queue_size=10)
 #pub = rospy.Publisher('/drive', AckermannDriveStamped, queue_size=10)
@@ -46,6 +47,7 @@ def PID(servo_error, previous_angle):
 def callback(data):
     global servo_commands
     global drive_commands
+    global s_angle
     global car_state
     global turn_number
     global at_pillar
@@ -73,7 +75,7 @@ def callback(data):
     # divide by 1000 to convert mm to m
     x_right = x[-1]/1000
     x_left = x[0]/1000
-    x_mid = x[round(N/2)]/1000
+    x_mid = x[int(round(N/2))]/1000
     right_minus_left = x_right - x_left
 
     if car_state == 1:     #First straightaway
@@ -92,11 +94,11 @@ def callback(data):
     elif car_state == 2.25:# Open wall straightaway
         print("value of x_left ", x_left)
         global at_pillar, past_pillar
-        right_minus_left = x_right - 2
+        right_minus_left = x_right - 1.5
         s_angle = PID(right_minus_left,s_angle)
         if x_left < 3 and not past_pillar:
             at_pillar = True
-        elif x_left > 3 and at_pillar:
+        #elif x_left > 3 and at_pillar:
             past_pillar = True
         elif x_left < 2.5 and past_pillar:
             car_state = 2.5
@@ -104,7 +106,7 @@ def callback(data):
         #     car_state = 2.5 #enters second straight post opening          
     elif car_state == 2.5:#Second straightaway
         s_angle = PID(right_minus_left,s_angle)
-        if x_mid < 4 and x_left < 4 and x_right > 4:  #TODO: modify this condition
+        if x_mid < 4 and x_left < 4:  #TODO: modify this condition
             car_state = 2.75 #enters turning corner        
     elif car_state == 2.75: #Second turn
         s_angle = -0.4
@@ -124,10 +126,9 @@ def callback(data):
         
     servo_commands.position = s_angle
     pub.publish(servo_commands)    
-    pub.publish(drive_commands)
-    print(" X_right = ", x_right, " X Left = ", x_left," X Mid = " x_mid)
-
-
+    #pub.publish(drive_commands)
+    print(" X_right = ", x_right, " X Left = ", x_left," X Mid = ", x_mid)
+    print("State =",car_state)
 def depth_data_processor():
     #Data from the realsense
     rospy.init_node("depth_data_processor")
