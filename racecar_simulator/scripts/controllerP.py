@@ -1,10 +1,18 @@
 #!/usr/bin/env python
+#Revision V1 11-19-19
+#Updated with PID controller inital test
+#
+#
+#
+#
+#
 import rospy
 from std_msgs.msg import Float32MultiArray
 # from ackermann_msgs.msg import AckermannDriveStamped
 from ros_pololu_servo.msg import MotorCommand
 # from sensor_msgs.msg import LaserScan
 import numpy as np
+import time
 servo_commands = MotorCommand()
 drive_commands = MotorCommand()
     #string joint_name
@@ -14,7 +22,9 @@ drive_commands = MotorCommand()
     # DC Motor Min 0.1 Max 0.45 (0.62 but we don't see a change)
 servo_commands.joint_name = 'servo' #Check name here
 drive_commands.joint_name = 'motor' #Check name here
+#
 drive_commands.position = 0 #Set speed here
+#
 drive_commands.speed = 0
 drive_commands.acceleration = 0
 servo_commands.position = 0
@@ -40,13 +50,13 @@ def PID(servo_error, previous_angle, dt):
     global error_previous
     
     max_angle = 0.54
-    kp = .1
-    ki = .02
-    kd = -.001
+    kp = .05
+    ki = .01
+    kd = 0
     error_I += servo_error*dt
     error_D = (servo_error-error_previous)/dt
-    u = -(kp*servo_error + ki*error_I + kd*error_D)
-    # print(u)
+    u = (kp*servo_error + ki*error_I + kd*error_D)
+    print(u)
     error_previous = servo_error
     new_angle = max(min(u,max_angle), -max_angle)
     # return new_angle
@@ -63,7 +73,7 @@ def callback(data):
     global t_prev
     global x_right_prev
 
-    turn_angle = -.4
+    turn_angle = .2
     
     N = 50 #Gives bin of 10 per
     x = []
@@ -103,10 +113,16 @@ def callback(data):
     
     x_right_prev = x_right
 
+    if x_mid < 0.75 and x_left < 0.75 and x_right < 0.75:
+	if car_state == 3 or car_state == 4:
+	    car_state = 4
+	else:
+	    car_state = 0
+
     if car_state == 1:     #First straightaway
         s_angle = PID(right_minus_left,s_angle,dt)
         # if x_mid < 4.75 and x_left < 3 and x_right > 4.5: #TODO: modify this condition
-        if d_x_right > 2.5:
+        if d_x_right > 2.5 and x_mid < 5:
             car_state = 1.5 #enters first turn        
     elif car_state == 1.5: #First turn
         s_angle = turn_angle
@@ -115,9 +131,9 @@ def callback(data):
     elif car_state == 2:#Second straightaway
         # right_minus_left = x_right - 2
         #TODO: choose the best way to do this.. semi middling, semi right-wall following?
-        right_minus_left = x_right - x_left/2 - 1
+        right_minus_left = x_right - x_left/3 - 1.3
         s_angle = PID(right_minus_left,s_angle,dt)
-        if d_x_right > 2.5:
+        if d_x_right > 2.5 and x_mid < 4.5:
         # if x_mid < 4.5 and x_left < 4 and x_right > 4:  #TODO: modify this condition
             car_state = 2.5 #enters turning corner
     elif car_state == 2.5: #Second turn
@@ -125,7 +141,7 @@ def callback(data):
         if x_mid > 8: #Makes the car go to the next straight
             car_state = 3
     elif car_state == 3:     #Last straightaway
-        s_angle = PID(right_minus_left,s_angle)    
+        s_angle = PID(right_minus_left,s_angle,dt)    
     
     elif car_state == 0:
         print("oh fuckkkkkkk")
