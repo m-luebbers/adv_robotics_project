@@ -24,34 +24,46 @@ turn_number = 0
 s_angle = 0
 
 #State Machine Variable
-car_state = 2
+car_state = 1
 
 pub = rospy.Publisher('/pololu/command', MotorCommand, queue_size=10)
 #pub = rospy.Publisher('/drive', AckermannDriveStamped, queue_size=10)
 
     # rate.sleep()    
-at_pillar = False
-past_pillar = False
+t_prev = 0 
+x_right_prev = 0
+error_I = 0
+error_previous = 0
     # rate.sleep()    
-def PID(servo_error, previous_angle):
+def PID(servo_error, previous_angle, dt):
+    global error_I
+    global error_previous
+    
     max_angle = 0.54
     kp = .1
-    if abs(servo_error) < 0.1:
-        new_angle = previous_angle
+    ki = .02
+    kd = -.001
+    error_I += servo_error*dt
+    error_D = (servo_error-error_previous)/dt
+    u = -(kp*servo_error + ki*error_I + kd*error_D)
+    # print(u)
+    error_previous = servo_error
+    new_angle = max(min(u,max_angle), -max_angle)
+    # return new_angle
+    if abs(new_angle - previous_angle) > .05:
+        return new_angle
     else:
-        u = kp * servo_error
-        print(u)
-        new_angle = max(min(u,max_angle), -max_angle)
-    return new_angle
+        return previous_angle
 
 def callback(data):
     global servo_commands
     global drive_commands
     global s_angle
     global car_state
-    global turn_number
-    global at_pillar
-    global past_pillar
+    global t_prev
+    global x_right_prev
+
+    turn_angle = -.4
     
     N = 50 #Gives bin of 10 per
     x = []
@@ -72,44 +84,44 @@ def callback(data):
     #x_red[0] is far left and x_red[end] is far right
     #Min value is 100 for reading
     #Servo -0.54(left) to + 0.54(right)
+
     # divide by 1000 to convert mm to m
     x_right = x[-1]/1000
     x_left = x[0]/1000
     x_mid = x[int(round(N/2))]/1000
     right_minus_left = x_right - x_left
 
+    if t_prev == 0:
+        dt = 0
+        d_x_right = 0
+        t_prev = time.time()
+    else:
+        t_new = time.time()
+        dt = t_new - t_prev
+        t_prev = t_new
+        d_x_right = x_right - x_right_prev
+    
+    x_right_prev = x_right
+
     if car_state == 1:     #First straightaway
-        s_angle = PID(right_minus_left,s_angle)
-        if x_mid < 4.75 and x_left < 3 and x_right > 4.5: #TODO: modify this condition
+        s_angle = PID(right_minus_left,s_angle,dt)
+        # if x_mid < 4.75 and x_left < 3 and x_right > 4.5: #TODO: modify this condition
+        if d_x_right > 2.5:
             car_state = 1.5 #enters first turn        
     elif car_state == 1.5: #First turn
-        s_angle = -0.4
+        s_angle = turn_angle
         if x_mid > 8: #Makes the car go to the next straight
             car_state = 2
     elif car_state == 2:#Second straightaway
-        if x_left < 6:
-            s_angle = PID(right_minus_left,s_angle)
-        else:
-            car_state = 2.25 #enters avoiding the open space
-    elif car_state == 2.25:# Open wall straightaway
-        print("value of x_left ", x_left)
-        global at_pillar, past_pillar
-        right_minus_left = x_right - 1.5
-        s_angle = PID(right_minus_left,s_angle)
-        if x_left < 3 and not past_pillar:
-            at_pillar = True
-        #elif x_left > 3 and at_pillar:
-            past_pillar = True
-        elif x_left < 2.5 and past_pillar:
-            car_state = 2.5
-        # if x_mid > 4.75 and x_left < 3 and x_right < 3 and t > 1.5:  #TODO: modify this condition
-        #     car_state = 2.5 #enters second straight post opening          
-    elif car_state == 2.5:#Second straightaway
-        s_angle = PID(right_minus_left,s_angle)
-        if x_mid < 4 and x_left < 4:  #TODO: modify this condition
-            car_state = 2.75 #enters turning corner        
-    elif car_state == 2.75: #Second turn
-        s_angle = -0.4
+        # right_minus_left = x_right - 2
+        #TODO: choose the best way to do this.. semi middling, semi right-wall following?
+        right_minus_left = x_right - x_left/2 - 1
+        s_angle = PID(right_minus_left,s_angle,dt)
+        if d_x_right > 2.5:
+        # if x_mid < 4.5 and x_left < 4 and x_right > 4:  #TODO: modify this condition
+            car_state = 2.5 #enters turning corner
+    elif car_state == 2.5: #Second turn
+        s_angle = turn_angle
         if x_mid > 8: #Makes the car go to the next straight
             car_state = 3
     elif car_state == 3:     #Last straightaway
