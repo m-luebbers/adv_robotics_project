@@ -55,11 +55,7 @@ double PololuMath::to_pulse(double radians, Motor motor)
 {
     double range_pwm = motor.calibration.max_pulse - motor.calibration.min_pulse;
     double range_rads = motor.calibration.max_angle - motor.calibration.min_angle;
-<<<<<<< HEAD
     //ROS_INFO_THROTTLE(1, "range rad %f", range_rads);
-=======
-    ROS_INFO_THROTTLE(1, "range rad %f", range_rads);
->>>>>>> b3d33bc610d80c5d83b6a6dbe5851b8287471114
     double scale = range_pwm / range_rads;
     return (radians * motor.direction * scale) + motor.init;
 }

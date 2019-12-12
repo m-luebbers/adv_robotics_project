@@ -4,13 +4,8 @@
 		<param name="depth_width" value="640"/>
 		<param name="depth_height" value="480"/>
 		<param name="depth_fps" value="60"/>
-<<<<<<< HEAD
 		<param name="n_rows" value="10" />
 		<param name="dn_rows" value="3" />
-=======
-		<!-- param name="n_rows" value="3" /> -->
-		<!-- param name="dn_rows" value="5" /> -->
->>>>>>> b3d33bc610d80c5d83b6a6dbe5851b8287471114
 	</node>
     <!-- <node pkg="racecar_simulator" name="Midterm" type="Midterm.py" /> -->
 </launch>

@@ -70,16 +70,11 @@ int main(int argc, char * argv[]) try
 	
 	using namespace cv;
     // Pre-define depth matrix size
-<<<<<<< HEAD
     Mat depth_matrix_m(Size(DEPTH_WIDTH, DEPTH_HEIGHT), CV_32FC1);
-=======
-    cv::Mat depth_matrix_m(Size(DEPTH_WIDTH, DEPTH_HEIGHT), CV_32FC1);
->>>>>>> b3d33bc610d80c5d83b6a6dbe5851b8287471114
 	// Define depth msg 
 	std_msgs::Float32MultiArray depth_msg;
 	std::vector<float> vals;
 
-<<<<<<< HEAD
 	bool first_loop = true;
 	while (ros::ok())
     {
@@ -87,17 +82,6 @@ int main(int argc, char * argv[]) try
         {
             cout << "Entering loop" << endl;
             first_loop = false;
-=======
-	int first_loop_flag = 1;
-	while (ros::ok())
-    {
-        //cnt++;
-
-        if(first_loop_flag == 1)
-        {
-            cout << "Collecting data..." << endl;
-            first_loop_flag = 0;
->>>>>>> b3d33bc610d80c5d83b6a6dbe5851b8287471114
         }
 
         
@@ -105,17 +89,12 @@ int main(int argc, char * argv[]) try
         rs2::frameset frames = pipe.wait_for_frames();
 		rs2::frame frame = frames.get_depth_frame();
 
-<<<<<<< HEAD
         Mat depth_matrix(Size(DEPTH_WIDTH, DEPTH_HEIGHT), CV_16U, (void*)(frame.get_data()), Mat::AUTO_STEP);
-=======
-        cv::Mat depth_matrix(Size(DEPTH_WIDTH, DEPTH_HEIGHT), CV_16U, (void*)(frame.get_data()), Mat::AUTO_STEP);
->>>>>>> b3d33bc610d80c5d83b6a6dbe5851b8287471114
 
         // Convert from 16b to meters
         depth_matrix.convertTo(depth_matrix_m, CV_32F, scale);
                 
         // copy in the data
-<<<<<<< HEAD
 		depth_msg.data.clear();
 		for (int ix=0; ix<DEPTH_WIDTH; ix++){
 			// Define value
@@ -161,9 +140,6 @@ int main(int argc, char * argv[]) try
 		depth_msg.data.insert(depth_msg.data.end(), (float*)depth_row.datastart, (float*)depth_row.dataend);
 <<<<<<< HEAD
 */
-=======
-
->>>>>>> b3d33bc610d80c5d83b6a6dbe5851b8287471114
 		pub_depth.publish(depth_msg);
 
 	}
