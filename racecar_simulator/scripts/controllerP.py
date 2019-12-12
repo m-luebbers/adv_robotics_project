@@ -8,7 +8,13 @@
 #
 import rospy
 from std_msgs.msg import Float32MultiArray
+<<<<<<< HEAD
 from ros_pololu_servo.msg import MotorCommand
+=======
+# from ackermann_msgs.msg import AckermannDriveStamped
+from ros_pololu_servo.msg import MotorCommand
+# from sensor_msgs.msg import LaserScan
+>>>>>>> b3d33bc610d80c5d83b6a6dbe5851b8287471114
 import numpy as np
 import time
 servo_commands = MotorCommand()
@@ -34,7 +40,11 @@ s_angle = 0
 #State Machine Variable
 car_state = 1
 
+<<<<<<< HEAD
 pub = rospy.Publisher('/pololu/command', MotorCommand, queue_size=1)
+=======
+pub = rospy.Publisher('/pololu/command', MotorCommand, queue_size=10)
+>>>>>>> b3d33bc610d80c5d83b6a6dbe5851b8287471114
 #pub = rospy.Publisher('/drive', AckermannDriveStamped, queue_size=10)
 
     # rate.sleep()    
@@ -47,8 +57,13 @@ def PID(servo_error, previous_angle, dt):
     global error_I
     global error_previous
 
+<<<<<<< HEAD
     max_angle = 0.54
     kp = 0.005
+=======
+    max_angle = 0.54-.14
+    kp = 0.01
+>>>>>>> b3d33bc610d80c5d83b6a6dbe5851b8287471114
     ki = 0.00
     kd = 0.01
     error_I += servo_error*dt
@@ -140,7 +155,11 @@ def callback(data):
 	    print("state 1.5")
     elif car_state == 1.5: #First turn
         s_angle = turn_angle
+<<<<<<< HEAD
         if x_mid > 7: #5o to the next straight
+=======
+        if x_right > 5: #5o to the next straight
+>>>>>>> b3d33bc610d80c5d83b6a6dbe5851b8287471114
 	    print("State 2")
             car_state = 2
     elif car_state == 2:#Second straightaway
@@ -173,11 +192,19 @@ def callback(data):
 	print("waiting")
 #	time.sleep(.2)
     #pub.publish(drive_commands)
+<<<<<<< HEAD
 #    print("d_x_turn",d_x_turn)
     print("car_state",car_state)
     print(" X_right = ", x_right,"X_mid = ", x_mid, " X Left = ", x_left)
     print("s_angle =", s_angle)
 #    print("-------------------------")
+=======
+    print("d_x_turn",d_x_turn)
+    print("car_state",car_state)
+    print(" X_right = ", x_right,"X_mid = ", x_mid, " X Left = ", x_left)
+    print("s_angle =", s_angle)
+    print("-------------------------")
+>>>>>>> b3d33bc610d80c5d83b6a6dbe5851b8287471114
 #    print("d_x_right", d_x_right)
 def depth_data_processor():
     #Data from the realsense

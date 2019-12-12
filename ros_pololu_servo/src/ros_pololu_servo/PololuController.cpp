@@ -97,8 +97,13 @@ bool PololuController::motor_range_callback(MotorRange::Request &req, MotorRange
         res.max = PololuMath::to_radians(motor.max, motor);
         res.direction = motor.direction;
         
+<<<<<<< HEAD
 	//ROS_INFO_THROTTLE(1,"Motor min %d", motor.min);
 	//ROS_INFO_THROTTLE(1,"Motor max %d", motor.max);
+=======
+	ROS_INFO_THROTTLE(1,"Motor min %d", motor.min);
+	ROS_INFO_THROTTLE(1,"Motor max %d", motor.max);
+>>>>>>> b3d33bc610d80c5d83b6a6dbe5851b8287471114
 	return true;
     }
     else
@@ -185,7 +190,11 @@ Motor PololuController::default_motor(){
 
 void PololuController::motor_command_callback(const MotorCommand::ConstPtr& msg)
 {
+<<<<<<< HEAD
     //ROS_INFO("Recevied cmd name: %s, position: %f, speed: %f, accel: %f", msg->joint_name.c_str(), to_degrees(msg->position), msg->speed, msg->acceleration);
+=======
+    ROS_INFO("Recevied cmd name: %s, position: %f, speed: %f, accel: %f", msg->joint_name.c_str(), to_degrees(msg->position), msg->speed, msg->acceleration);
+>>>>>>> b3d33bc610d80c5d83b6a6dbe5851b8287471114
 
     map<string, Motor>::iterator iterator = motors.find(msg->joint_name);
     // Allow to send commands to named and unnamed motors
@@ -193,7 +202,11 @@ void PololuController::motor_command_callback(const MotorCommand::ConstPtr& msg)
     Motor motor;
     if(iterator != motors.end()){
       motor = motors[msg->joint_name];
+<<<<<<< HEAD
       //ROS_INFO_THROTTLE(1, "Check");
+=======
+      ROS_INFO_THROTTLE(1, "Check");
+>>>>>>> b3d33bc610d80c5d83b6a6dbe5851b8287471114
     }else{
       int motor_id = std::atoi(msg->joint_name.c_str());
 
@@ -228,10 +241,17 @@ void PololuController::motor_command_callback(const MotorCommand::ConstPtr& msg)
         double new_max = std::max(min, max);
         double new_position = msg->position;
 
+<<<<<<< HEAD
 	//ROS_INFO_THROTTLE(1, "Min %f", min);
         //ROS_INFO_THROTTLE(1, "New min %f", new_min);
 	//ROS_INFO_THROTTLE(1, "Max %f", max);
 	//ROS_INFO_THROTTLE(1, "New max %f", new_max);
+=======
+	ROS_INFO_THROTTLE(1, "Min %f", min);
+        ROS_INFO_THROTTLE(1, "New min %f", new_min);
+	ROS_INFO_THROTTLE(1, "Max %f", max);
+	ROS_INFO_THROTTLE(1, "New max %f", new_max);
+>>>>>>> b3d33bc610d80c5d83b6a6dbe5851b8287471114
 
         if((new_min - 0.001) > new_position)
         {
@@ -264,7 +284,11 @@ void PololuController::motor_command_callback(const MotorCommand::ConstPtr& msg)
                 serial_interface->setSpeedCP(motor.motor_id, speed);
                 serial_interface->setAccelerationCP(motor.motor_id, acceleration);
                 serial_interface->setTargetCP(motor.motor_id, (int)pulse_m);
+<<<<<<< HEAD
                 //ROS_INFO("id: %d, pulse:  %f, pos: %f, speed: %f, accel: %f", motor.motor_id, pulse_m, msg->position, speed, acceleration);
+=======
+                ROS_INFO("id: %d, pulse:  %f, pos: %f, speed: %f, accel: %f", motor.motor_id, pulse_m, msg->position, speed, acceleration);
+>>>>>>> b3d33bc610d80c5d83b6a6dbe5851b8287471114
             }
         }
     }
