@@ -21,7 +21,7 @@ drive_commands.joint_name = 'motor' #Check name here
 drive_commands.position = 0 #Set speed here
 drive_commands.speed = 0
 # acceleration for best run = .2
-drive_commands.acceleration = .07
+drive_commands.acceleration = .04
 servo_commands.position = 0
 servo_commands.speed = 0.2
 
@@ -32,7 +32,7 @@ pub = rospy.Publisher('/pololu/command', MotorCommand, queue_size=1)
 #pub.publish(drive_commands)
 raw_input("Press Enter to RUMBLEEEE")
 #State Machine Variable
-car_state = 1
+car_state = 2
 
 max_speed = .3
 # min_speed of best run = .05
@@ -45,12 +45,13 @@ error_previous = 0
 def PID(servo_error, previous_angle, dt):
     global error_I
     global error_previous
-
     max_angle = 0.54
     # kp of best run = .005
     kp = 0.01/1.1
     ki = 0.00
     kd = 0.001*0
+    #since we are not using kd currently setting dt to 1
+    dt = 1
     error_I += servo_error*dt
     error_D = (servo_error-error_previous)/dt
     u = (kp*servo_error + ki*error_I + kd*error_D)
@@ -105,7 +106,7 @@ def callback(data):
 		if ix == N-1:
 			std_right = np.std(bin_vals)
     #x_turn = np.average(x_zeroless[-6:-1])
-
+########
     #x_red[0] is far left and x_red[end] is far right
     #Min value is 100 for reading
 	index_max = np.argwhere(x == np.amax(x))
@@ -114,9 +115,10 @@ def callback(data):
 	if len(index_max) > 1:
 		index_max = np.average(index_max) 	
     #Servo -0.54(left) to + 0.54(right) same for here
-#	print("Median index max -", index_max)
+#	print("Median Max Bin -", index_max)
 	center_bin_delta = index_max - round(N/2)
 #	print("center bin delta = ", center_bin_delta)
+######
     # divide by 1000 to convert mm to m
 	x_right = x[-1]
 	x_left = x[0]
@@ -147,7 +149,7 @@ def callback(data):
 
 	if car_state == 1:     #First straightaway
 		s_angle = PID(center_bin_delta,s_angle,dt)
-		if x_mid < 8.5  and time.time()-time_start > 2: #TODO: modify this condition
+		if x_mid < 8.5  and time.time()-time_start > .5: #TODO: modify this condition
 #		if std_right > turn_thresh and x_mid < 6 and time.time()-time_start > 0.4: # or std_right_2 > turn_thresh:
 			print("state 1.5")
 			print(" X_right = ", x_right,"X_mid = ", x_mid, " X Left = ", x_left)
@@ -155,38 +157,55 @@ def callback(data):
 			print("std_right", std_right)
 			time_start = time.time()
 	elif car_state == 1.5: #First turn
+		servo_commands.acceleration = 0
 		if time.time()-time_start < 0.2:
-			s_angle = turn_angle-.15
-			drive_commands.position = -.1
+			s_angle = 0.1
+			drive_commands.position = 0
+			print("Yo need to sloooow the fuck down")
+		elif time.time()-time_start < 0.5:
+			s_angle = turn_angle
+			drive_commands.position = -.05
 			print("Hide your kids cause we backing this shit up")
-		elif time.time()-time_start <0.4:
-			s_angle = -turn_angle+.15
-			drive_commands.position = .1
+		elif time.time()-time_start <1:
+			s_angle = -turn_angle*.5
+			drive_commands.position = 0
 			print("Yo mamma as well")
 		else: #5o to the next straight
 			print("State 2")
 			car_state = 2
 			print(" X_right = ", x_right,"X_mid = ", x_mid, " X Left = ", x_left)
+			time_start = time.time()
+			servo_commands.acceleration = 0.05
 	elif car_state == 2: #Second straightaway
         # right_minus_left = x_right - 2
         #TODO: choose the best way to do this.. semi middling, semi right-wall following?
 		# right_minus_left = x_right - 2.5 #x_left/3 - 1.3
 		s_angle = PID(center_bin_delta,s_angle,dt)
-		if std_right > turn_thresh and x_mid < 5: # or std_right_2 > turn_thresh:
+		if x_mid < 8 and time.time()-time_start > 2: # or std_right_2 > turn_thresh:
         # if x_mid < 4.5 and x_left < 4 and x_right > 4:  #TODO: modify this condition
 			car_state = 2.5 #enters turning corner
 			print("state 2.5")
 			print(" X_right = ", x_right,"X_mid = ", x_mid, " X Left = ", x_left)
 			print("std right", std_right)
+			time_start = time.time()
 	elif car_state == 2.5: #Second turn
-		s_angle = turn_angle
-		drive_commands.position -= turning_speed
-		if x_mid > 8: #Makes the car go to the next straight
-			car_state = 3
+		if time.time()-time_start < 0.15:
+			s_angle = turn_angle-.15
+			drive_commands.position = -.1
+			print("Hide your kids cause we backing this shit up round 2")
+		elif time.time()-time_start <0.3:
+			s_angle = -turn_angle
+			drive_commands.position = 0
+			print("Yo daddy as well")
+		else: #5o to the next straight
 			print("State 3")
+			car_state = 3
 			print(" X_right = ", x_right,"X_mid = ", x_mid, " X Left = ", x_left)
+			time_start = time.time()
 	elif car_state == 3:     #Last straightaway
 		s_angle = PID(center_bin_delta,s_angle,dt)
+		if x_mid < 7 and time.time()-time_start > 2:
+			car_state = 4
 	elif car_state == 0:
 		print("oh fuckkkkkkk")
 		drive_commands.position = 0
@@ -200,7 +219,7 @@ def callback(data):
 	pub.publish(servo_commands)
 	pub.publish(drive_commands)
 #    print("d_x_turn",d_x_turn)
-#	print("car_state",car_state)
+	print("car_state",car_state)
 #	print(" X_right = ", x_right,"X_mid = ", x_mid, " X Left = ", x_left)
 #	print("s_angle =", s_angle)
 #    print("-------------------------")
