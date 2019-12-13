@@ -1,0 +1,35 @@
+
+*** These modified files were found in JOE when it aborted on Fri Dec 13 19:04:15 2019
+*** JOE was aborted by UNIX signal 1
+
+*** File '(Unnamed)'
+
+
+
+
+
+
+
+
+*** File '(Unnamed)'
+ext
+
+
+*** File '* Build Log *'
+/bin/sh: 3: Syntax error: ")" unexpected
+
+
+
+
+*** File '(Unnamed)'
+/home/odroid/catkin_ws/src/.git/MERGE_MSG
+* Build Log *
+* Build Log *
+* Build Log *
+* Build Log *
+
+*** File '* Startup Log *'
+Processing '/etc/joe/editorrc'...
+Processing '/etc/joe/ftyperc'...
+Finished processing /etc/joe/ftyperc
+Finished processing /etc/joe/editorrc

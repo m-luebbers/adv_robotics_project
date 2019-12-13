@@ -29,7 +29,7 @@ def cof():
     # run simultaneously.
     rospy.init_node('cof', anonymous=True)
 
-    rospy.Subscriber("rmu_data/raw", Vector3, acc_data)
+    rospy.Subscriber("imu/data", Vector3, acc_data)
     # spin() simply keeps python from exiting until this node is stopped
     rospy.spin()
 
