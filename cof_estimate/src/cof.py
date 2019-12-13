@@ -1,9 +1,12 @@
 #!/usr/bin/env python
 import rospy
 from geometry_msgs import Vector3
+import math 
 
+weight = 2 #need to measure
 first = True
 gravity = [0,0,1]
+
 
 def acc_data(data):
     acc = [data.x, data.y, data.z]
@@ -17,8 +20,9 @@ def acc_data(data):
     	first = False
     	gravity = acc
 
-    true_acc = [acc[0] - gravity[0], acc[0] - gravity[0], acc[0] - gravity[0]]
-
+    true_acc = [acc[0] - gravity[0], acc[1] - gravity[1], acc[2] - gravity[2]]
+    acc_abs = math(true_acc[0]*true_acc[0] + true_acc[1]*true_acc[1] + true_acc[2] * true_acc[2])
+    
     
 def cof():
 

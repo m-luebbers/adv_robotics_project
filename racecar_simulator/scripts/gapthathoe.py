@@ -157,15 +157,15 @@ def callback(data):
 			print("std_right", std_right)
 			time_start = time.time()
 	elif car_state == 1.5: #First turn
-		servo_commands.acceleration = 0
+		servo_commands.acceleration = 0 # sets the servo to respond as fast as possible
 		if time.time()-time_start < 0.2:
 			s_angle = 0.1
 			drive_commands.position = 0
 			print("Yo need to sloooow the fuck down")
 		elif time.time()-time_start < 0.5:
 			s_angle = turn_angle
-			drive_commands.position = -.05
-			print("Hide your kids cause we backing this shit up")
+			drive_commands.position = max_speed #If this value is postive we power slide else drift
+			print("Hide your girl cause we Psliding into dat hole")
 		elif time.time()-time_start <1:
 			s_angle = -turn_angle*.5
 			drive_commands.position = 0
@@ -180,21 +180,26 @@ def callback(data):
         # right_minus_left = x_right - 2
         #TODO: choose the best way to do this.. semi middling, semi right-wall following?
 		# right_minus_left = x_right - 2.5 #x_left/3 - 1.3
+
 		s_angle = PID(center_bin_delta,s_angle,dt)
-		if x_mid < 8 and time.time()-time_start > 2: # or std_right_2 > turn_thresh:
-        # if x_mid < 4.5 and x_left < 4 and x_right > 4:  #TODO: modify this condition
+		if x_mid < 8 and time.time()-time_start > 2:
 			car_state = 2.5 #enters turning corner
 			print("state 2.5")
 			print(" X_right = ", x_right,"X_mid = ", x_mid, " X Left = ", x_left)
 			print("std right", std_right)
 			time_start = time.time()
 	elif car_state == 2.5: #Second turn
-		if time.time()-time_start < 0.15:
-			s_angle = turn_angle-.15
-			drive_commands.position = -.1
-			print("Hide your kids cause we backing this shit up round 2")
-		elif time.time()-time_start <0.3:
-			s_angle = -turn_angle
+		servo_commands.acceleration = 0 # sets the servo to respond as fast as possible
+		if time.time()-time_start < 0.2:
+			s_angle = 0.1
+			drive_commands.position = 0
+			print("Yo need to sloooow the fuck down too damn fast again")
+		elif time.time()-time_start < 0.5:
+			s_angle = turn_angle
+			drive_commands.position = max_speed #If this value is postive we power slide else drift
+			print("Hide your girl cause we Psliding into dat other hole")
+		elif time.time()-time_start <1:
+			s_angle = -turn_angle*.5
 			drive_commands.position = 0
 			print("Yo daddy as well")
 		else: #5o to the next straight
@@ -202,6 +207,7 @@ def callback(data):
 			car_state = 3
 			print(" X_right = ", x_right,"X_mid = ", x_mid, " X Left = ", x_left)
 			time_start = time.time()
+			servo_commands.acceleration = 0.05
 	elif car_state == 3:     #Last straightaway
 		s_angle = PID(center_bin_delta,s_angle,dt)
 		if x_mid < 7 and time.time()-time_start > 2:
