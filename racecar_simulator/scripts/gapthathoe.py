@@ -48,9 +48,9 @@ def PID(servo_error, previous_angle, dt):
 
     max_angle = 0.54
     # kp of best run = .02
-    kp = 0.015/100
+    kp = 0.015/20
     ki = 0.00
-    kd = 0.03/600
+    kd = 0.03/60
     error_I += servo_error*dt
     error_D = (servo_error-error_previous)/dt
     u = (kp*servo_error + ki*error_I + kd*error_D)
@@ -98,23 +98,28 @@ def callback(data):
 	lx = len(x_zeroless)
 	for ix in range(N):
 		bin_vals = x_zeroless[int(round(lx*ix/N)):int(round(lx*(ix+1)/N))]
-		x.append(np.average(bin_vals))
+		bin_valus_ave = np.average(bin_vals)
+		if bin_valus_ave > 10:
+			bin_valus_ave = 10
+		x.append(bin_valus_ave)
 		if ix == N-1:
 			std_right = np.std(bin_vals)
     #x_turn = np.average(x_zeroless[-6:-1])
 
     #x_red[0] is far left and x_red[end] is far right
     #Min value is 100 for reading
-    #Servo -0.54(left) to + 0.54(right)
-	
-	index_max = np.argmax(x)	
+
+	index_max = np.argwhere(x == np.amax(x))
+	if len(index_max) > 1:
+		index_max = np.median(index_max) 	
+    #Servo -0.54(left) to + 0.54(right) same for here
 	center_bin_delta = index_max - round(N/2)
 
     # divide by 1000 to convert mm to m
 	x_right = x[-1]
 	x_left = x[0]
 	x_mid = x[int(round(N/2))]
-	right_minus_left = x_right - 2.5 #x_left
+	# right_minus_left = x_right - 2.5 #x_left
 
 	if t_prev == 0:
 		dt = 0
@@ -156,8 +161,8 @@ def callback(data):
 	elif car_state == 2: #Second straightaway
         # right_minus_left = x_right - 2
         #TODO: choose the best way to do this.. semi middling, semi right-wall following?
-		right_minus_left = x_right - 2.5 #x_left/3 - 1.3
-		s_angle = PID(right_minus_left,s_angle,dt)
+		# right_minus_left = x_right - 2.5 #x_left/3 - 1.3
+		s_angle = PID(center_bin_delta,s_angle,dt)
 		if std_right > turn_thresh and x_mid < 5: # or std_right_2 > turn_thresh:
         # if x_mid < 4.5 and x_left < 4 and x_right > 4:  #TODO: modify this condition
 			car_state = 2.5 #enters turning corner
@@ -172,7 +177,7 @@ def callback(data):
 			print("State 3")
 			print(" X_right = ", x_right,"X_mid = ", x_mid, " X Left = ", x_left)
 	elif car_state == 3:     #Last straightaway
-		s_angle = PID(right_minus_left,s_angle,dt)
+		s_angle = PID(center_bin_delta,s_angle,dt)
 	elif car_state == 0:
 		print("oh fuckkkkkkk")
 		drive_commands.position = 0
