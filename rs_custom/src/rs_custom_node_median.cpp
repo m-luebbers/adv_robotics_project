@@ -6,10 +6,10 @@
 #include "std_msgs/Float32MultiArray.h"
 #include <librealsense2/rs.hpp> 
 //#include <opencv2/opencv.hpp>   
-#include <cv_bridge/cv_bridge.h> 
-#include <librealsense2/rs.hpp>
+#include <cv_bridge/cv_bridge.h>
 #include <librealsense2/rs_advanced_mode.hpp>
 #include <ros/console.h>
+#include <algorithm>
 
 using std::cout;
 using std::endl;
@@ -73,7 +73,8 @@ int main(int argc, char * argv[]) try
     Mat depth_matrix_m(Size(DEPTH_WIDTH, DEPTH_HEIGHT), CV_32FC1);
 	// Define depth msg 
 	std_msgs::Float32MultiArray depth_msg;
-	std::vector<float> vals;
+	std::vector<int> vals;
+	std::vector<int> depth_row;
 
 	bool first_loop = true;
 	while (ros::ok())
@@ -91,9 +92,7 @@ int main(int argc, char * argv[]) try
 
         Mat depth_matrix(Size(DEPTH_WIDTH, DEPTH_HEIGHT), CV_16U, (void*)(frame.get_data()), Mat::AUTO_STEP);
 
-        // Convert from 16b to meters
-        depth_matrix.convertTo(depth_matrix_m, CV_32F, scale);
-                
+               
         // copy in the data
 		depth_msg.data.clear();
 		for (int ix=0; ix<DEPTH_WIDTH; ix++){
@@ -101,17 +100,24 @@ int main(int argc, char * argv[]) try
 			vals.clear();
 
 			for (int iy=0; iy<N_ROWS; iy++){
-				if (depth_matrix_m.at<float>(Point(ix,DEPTH_HEIGHT/2 - iy*DN_ROWS))!=0.0){
-					vals.push_back(depth_matrix_m.at<float>(Point(ix,DEPTH_HEIGHT/2 - iy*DN_ROWS)));
+				if (depth_matrix.at<int>(Point(ix,DEPTH_HEIGHT/2 - iy*DN_ROWS))!=0.0){
+					vals.push_back(depth_matrix.at<int>(Point(ix,DEPTH_HEIGHT/2 - iy*DN_ROWS)));
 				}
 			}
 
 			if (vals.size() == 0){
 				depth_msg.data.push_back(0.0);
 			} else {
-				depth_msg.data.push_back(std::accumulate(vals.begin(),vals.end(),0.0)/vals.size());
+				float* first(&vals[0]);
+				float* last(first + 4);
+				std::sort(first, last);
+				depth_msg.data.push_back(vals[static_cast<int>(vals.size()/2)]);
 			}
 		}
+
+		// Convert from 16b to meters
+        depth_matrix.convertTo(depth_matrix_m, CV_32F, scale);
+         
 /*		Mat depth_row(Size(DEPTH_WIDTH, 0), CV_32F);
 =======
 		//for (int ix=0; ix<DEPTH_WIDTH; ix++){

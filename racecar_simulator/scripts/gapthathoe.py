@@ -48,13 +48,13 @@ def PID(servo_error, previous_angle, dt):
 
     max_angle = 0.54
     # kp of best run = .02
-    kp = 0.015/20
+    kp = 0.54/100
     ki = 0.00
     kd = 0.03/60
     error_I += servo_error*dt
     error_D = (servo_error-error_previous)/dt
-    u = (kp*servo_error + ki*error_I + kd*error_D)
-    #print("u",u)
+#    u = (kp*servo_error + ki*error_I + kd*error_D)
+    print("u",u)
     error_previous = servo_error
     new_angle = max(min(u,max_angle), -max_angle)
     # return new_angle
@@ -114,7 +114,7 @@ def callback(data):
 		index_max = np.median(index_max) 	
     #Servo -0.54(left) to + 0.54(right) same for here
 	center_bin_delta = index_max - round(N/2)
-
+	print("center bin delta = ", center_bin_delta)
     # divide by 1000 to convert mm to m
 	x_right = x[-1]
 	x_left = x[0]
