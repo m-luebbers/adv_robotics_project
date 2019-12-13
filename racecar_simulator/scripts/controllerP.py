@@ -111,7 +111,7 @@ def callback(data):
 	x_right = x[-1]
 	x_left = x[0]
 	x_mid = x[int(round(N/2))]
-	right_minus_left = x_right - 2.5 #x_left
+	right_minus_left = x_right - x_left
 
 	if t_prev == 0:
 		dt = 0

@@ -144,6 +144,8 @@ include_directories(
 
 add_executable(rs_custom_node src/rs_custom_node.cpp)
 target_link_libraries(rs_custom_node ${catkin_LIBRARIES} realsense2)
+add_executable(rs_custom_node_median src/rs_custom_node_median.cpp)
+target_link_libraries(rs_custom_node_median ${catkin_LIBRARIES} realsense2)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the

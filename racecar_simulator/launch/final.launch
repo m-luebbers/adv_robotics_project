@@ -1,11 +1,11 @@
 <launch>
     <include file="$(find ros_pololu_servo)/launch/pololu.launch"/>
-    <node pkg="rs_custom" name="rs_custom_node" type="rs_custom_node" output="screen">
+    <node pkg="rs_custom" name="rs_custom_node_median" type="rs_custom_node_median" output="screen">
 		<param name="depth_width" value="640"/>
 		<param name="depth_height" value="480"/>
 		<param name="depth_fps" value="30"/>
-		<param name="n_rows" value="10" />
-		<param name="dn_rows" value="2" />
+		<param name="n_rows" value="50" />
+		<param name="dn_rows" value="1" />
 	</node>
     <node pkg="racecar_simulator" name="controllerP" type="controllerP.py" output="screen"/>
 </launch>

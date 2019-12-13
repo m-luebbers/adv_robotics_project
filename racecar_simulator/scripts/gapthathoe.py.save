@@ -36,7 +36,7 @@ car_state = 1
 
 max_speed = .3
 # min_speed of best run = .05
-min_speed = .05
+min_speed = -.1
 t_prev = 0
 x_right_prev = 0
 error_I = 0
@@ -47,10 +47,10 @@ def PID(servo_error, previous_angle, dt):
     global error_previous
 
     max_angle = 0.54
-    # kp of best run = .005
-    kp = 0.01/1.1
+    # kp of best run = .02
+    kp = 0.01/10
     ki = 0.00
-    kd = 0.001*0
+    kd = 0.001/3
     error_I += servo_error*dt
     error_D = (servo_error-error_previous)/dt
     u = (kp*servo_error + ki*error_I + kd*error_D)
@@ -114,8 +114,9 @@ def callback(data):
 	if len(index_max) > 1:
 		index_max = np.average(index_max) 	
     #Servo -0.54(left) to + 0.54(right) same for here
-#	print("Median index max -", index_max)
-	center_bin_delta = index_max - round(N/2)
+	print("Median index max -", index_max)
+	
+center_bin_delta = index_max - round(N/2)
 #	print("center bin delta = ", center_bin_delta)
     # divide by 1000 to convert mm to m
 	x_right = x[-1]
@@ -147,23 +148,16 @@ def callback(data):
 
 	if car_state == 1:     #First straightaway
 		s_angle = PID(center_bin_delta,s_angle,dt)
-		if x_mid < 8.5  and time.time()-time_start > 2: #TODO: modify this condition
-#		if std_right > turn_thresh and x_mid < 6 and time.time()-time_start > 0.4: # or std_right_2 > turn_thresh:
+        # if x_mid < 4.75 and x_left < 3 and x_right > 4.5: #TODO: modify this condition
+		if std_right > turn_thresh and x_mid < 6 and time.time()-time_start > 0.4: # or std_right_2 > turn_thresh:
 			print("state 1.5")
 			print(" X_right = ", x_right,"X_mid = ", x_mid, " X Left = ", x_left)
 			car_state = 1.5 #enters first turn
 			print("std_right", std_right)
-			time_start = time.time()
 	elif car_state == 1.5: #First turn
-		if time.time()-time_start < 0.2:
-			s_angle = turn_angle-.15
-			drive_commands.position = -.1
-			print("Hide your kids cause we backing this shit up")
-		elif time.time()-time_start <0.4:
-			s_angle = -turn_angle+.15
-			drive_commands.position = .1
-			print("Yo mamma as well")
-		else: #5o to the next straight
+		s_angle = turn_angle
+		drive_commands.position -= turning_speed
+		if x_mid > 7: #5o to the next straight
 			print("State 2")
 			car_state = 2
 			print(" X_right = ", x_right,"X_mid = ", x_mid, " X Left = ", x_left)
@@ -201,11 +195,11 @@ def callback(data):
 	pub.publish(drive_commands)
 #    print("d_x_turn",d_x_turn)
 #	print("car_state",car_state)
-#	print(" X_right = ", x_right,"X_mid = ", x_mid, " X Left = ", x_left)
-#	print("s_angle =", s_angle)
+#    print(" X_right = ", x_right,"X_mid = ", x_mid, " X Left = ", x_left)
+	print("s_angle =", s_angle)
 #    print("-------------------------")
 #    print("std_right", std_right)
-	print("motors angle", servo_commands.position)
+#    print("motors peed", drive_commands.position)
 
 def depth_data_processor():
     #Data from the realsense

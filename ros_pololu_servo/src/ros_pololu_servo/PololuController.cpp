@@ -185,7 +185,7 @@ Motor PololuController::default_motor(){
 
 void PololuController::motor_command_callback(const MotorCommand::ConstPtr& msg)
 {
-    //ROS_INFO("Recevied cmd name: %s, position: %f, speed: %f, accel: %f", msg->joint_name.c_str(), to_degrees(msg->position), msg->speed, msg->acceleration);
+//    ROS_INFO("Recevied cmd name: %s, position: %f, speed: %f, accel: %f", msg->joint_name.c_str(), to_degrees(msg->position), msg->speed, msg->acceleration);
 
     map<string, Motor>::iterator iterator = motors.find(msg->joint_name);
     // Allow to send commands to named and unnamed motors
@@ -250,8 +250,8 @@ void PololuController::motor_command_callback(const MotorCommand::ConstPtr& msg)
 
             double speed = PololuMath::interpolate(msg->speed, 0.0, 1.0, 0, 255.0); //Set speed, make sure doesn't below 0, which is max speed
             double acceleration = PololuMath::interpolate(msg->acceleration, 0.0, 1.0, 0, 255.0); //Set acceleration, make sure doesn't go below 0, which is max acceleration
-            double pulse_m = PololuMath::clamp(pulse * 4.0, motor.min * 4.0, motor.max * 4.0);
-
+            //double pulse_m = PololuMath::clamp(pulse * 4.0, motor.min * 4.0, motor.max * 4.0);
+	    double pulse_m = PololuMath::clamp(pulse * 4.0, 2000, 8000);
             if(daisy_chain)
             {
                 serial_interface->setSpeedPP(motor.pololu_id, motor.motor_id, speed);
