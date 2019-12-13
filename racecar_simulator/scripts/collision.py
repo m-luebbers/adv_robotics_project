@@ -183,22 +183,19 @@ def callback(data):
 
 def imu_callback(data):
 	ay = data.linear_acceleration.y
+	if ay < -30:
+		print("booze")
 
-def depth_data_processor():
+def data_processor():
     #Data from the realsense
-    rospy.init_node("depth_data_processor")
-    rospy.Subscriber('/depth_row', Float32MultiArray, callback)
-
-def imu_data_processor():
-	rospy.init_node("imu_data_processor")
+	rospy.init_node("depth_data_processor")
+	rospy.Subscriber('/depth_row', Float32MultiArray, callback)
 	rospy.Subscriber('/imu/data', Imu, imu_callback)
 
 if __name__ == '__main__':
-    try:
-        depth_data_processor()
-		imu_data_processor()
-    except KeyboardInterrupt:
+	try:
+		data_processor()
+	except KeyboardInterrupt:
 		print('boobs')
-        drive_commands.position=0
-	pub.publish(drive_commands)
-    rospy.spin()
+		drive_commands.position=0
+	rospy.spin()

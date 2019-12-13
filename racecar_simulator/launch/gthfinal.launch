@@ -7,6 +7,6 @@
 		<param name="n_rows" value="10" />
 		<param name="dn_rows" value="2" />
 	</node>
-    <node pkg="racecar_simulator" name="controllerP" type="controllerP.py" output="screen"/>
+    <node pkg="racecar_simulator" name="gapthathoe" type="gapthathoe.py" output="screen"/>
 </launch>
 

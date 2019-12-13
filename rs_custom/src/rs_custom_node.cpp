@@ -86,7 +86,7 @@ int main(int argc, char * argv[]) try
 
         
         // Wait for next set of frames from the camera
-        rs2::frameset frames = pipe.wait_for_frames();
+        rs2::frameset frames = pipe.wait_for_frames(4000);
 		rs2::frame frame = frames.get_depth_frame();
 
         Mat depth_matrix(Size(DEPTH_WIDTH, DEPTH_HEIGHT), CV_16U, (void*)(frame.get_data()), Mat::AUTO_STEP);

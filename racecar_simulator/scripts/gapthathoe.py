@@ -48,9 +48,9 @@ def PID(servo_error, previous_angle, dt):
 
     max_angle = 0.54
     # kp of best run = .02
-    kp = 0.015/1
+    kp = 0.015/100
     ki = 0.00
-    kd = 0.03/6
+    kd = 0.03/600
     error_I += servo_error*dt
     error_D = (servo_error-error_previous)/dt
     u = (kp*servo_error + ki*error_I + kd*error_D)
@@ -74,7 +74,7 @@ def callback(data):
 	turning = False
 	turn_angle = .54
 	turn_thresh = .8
-	N = 25
+	N = 100
 	x = []
 	turning_speed = 0.1
 
@@ -106,6 +106,9 @@ def callback(data):
     #x_red[0] is far left and x_red[end] is far right
     #Min value is 100 for reading
     #Servo -0.54(left) to + 0.54(right)
+	
+	index_max = np.argmax(x)	
+	center_bin_delta = index_max - round(N/2)
 
     # divide by 1000 to convert mm to m
 	x_right = x[-1]
@@ -136,7 +139,7 @@ def callback(data):
 	drive_commands.position = min(x_mid/10*max_speed + min_speed,max_speed)
 
 	if car_state == 1:     #First straightaway
-		s_angle = PID(right_minus_left,s_angle,dt)
+		s_angle = PID(center_bin_delta,s_angle,dt)
         # if x_mid < 4.75 and x_left < 3 and x_right > 4.5: #TODO: modify this condition
 		if std_right > turn_thresh and x_mid < 6 and time.time()-time_start > 0.4: # or std_right_2 > turn_thresh:
 			print("state 1.5")
@@ -185,7 +188,7 @@ def callback(data):
 #    print("d_x_turn",d_x_turn)
 #	print("car_state",car_state)
 #    print(" X_right = ", x_right,"X_mid = ", x_mid, " X Left = ", x_left)
-#    print("s_angle =", s_angle)
+	print("s_angle =", s_angle)
 #    print("-------------------------")
 #    print("std_right", std_right)
 #    print("motors peed", drive_commands.position)
