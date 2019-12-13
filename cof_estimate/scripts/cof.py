@@ -1,14 +1,20 @@
 #!/usr/bin/env python
 import rospy
-from geometry_msgs import Vector3
+from sensor_msgs import imu
+from geometry_msg import Vector3
+from math import sqrt
 
+mass = 2 #need to measure
+weight = 2*9.8
 first = True
 gravity = [0,0,1]
 
-def acc_data(data):
+
+def acc_data(imu_data):
+    data = imu_data.linear_acceleratio
     acc = [data.x, data.y, data.z]
     print(acc)
-    print("here is the current cof estimation")
+    print("acc is %f, %f, %f", acc[0], acc[1], acc[2])
 
     global first
     global gravity 
@@ -17,19 +23,16 @@ def acc_data(data):
     	first = False
     	gravity = acc
 
-    true_acc = [acc[0] - gravity[0], acc[0] - gravity[0], acc[0] - gravity[0]]
-
+    true_acc = [acc[0] - gravity[0], acc[1] - gravity[1], acc[2] - gravity[2]]
+    acc_abs = sqrt(true_acc[0]*true_acc[0] + true_acc[1]*true_acc[1] + true_acc[2] * true_acc[2])
+    friction_force = acc_abs * mass
+    cof = friction_force / weight
+    print("cof is %f",cof)
     
 def cof():
-
-    # In ROS, nodes are uniquely named. If two nodes with the same
-    # name are launched, the previous one is kicked off. The
-    # anonymous=True flag means that rospy will choose a unique
-    # name for our 'listener' node so that multiple listeners can
-    # run simultaneously.
     rospy.init_node('cof', anonymous=True)
 
-    rospy.Subscriber("imu/data", Vector3, acc_data)
+    rospy.Subscriber("imu/data", imu, imu_data)
     # spin() simply keeps python from exiting until this node is stopped
     rospy.spin()
 
