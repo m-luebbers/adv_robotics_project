@@ -53,8 +53,8 @@ def PID(servo_error, previous_angle, dt):
     kd = 0.03/60
     error_I += servo_error*dt
     error_D = (servo_error-error_previous)/dt
-#    u = (kp*servo_error + ki*error_I + kd*error_D)
-    print("u",u)
+    u = (kp*servo_error + ki*error_I + kd*error_D)
+#    print("u",u)
     error_previous = servo_error
     new_angle = max(min(u,max_angle), -max_angle)
     # return new_angle
