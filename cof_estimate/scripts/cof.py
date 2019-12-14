@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import rospy
-from sensor_msgs import imu
-from geometry_msg import Vector3
+from sensor_msgs.msg import Imu
+from geometry_msgs.msg import Vector3
 from math import sqrt
 
 mass = 2 #need to measure
@@ -10,11 +10,11 @@ first = True
 gravity = [0,0,1]
 
 
-def acc_data(imu_data):
-    data = imu_data.linear_acceleratio
+def imu_data(whole_data):
+    data = whole_data.linear_acceleration
     acc = [data.x, data.y, data.z]
-    print(acc)
-    print("acc is %f, %f, %f", acc[0], acc[1], acc[2])
+    #print(acc)
+    print("acc is", acc[0], acc[1], acc[2])
 
     global first
     global gravity 
@@ -27,26 +27,14 @@ def acc_data(imu_data):
     acc_abs = sqrt(true_acc[0]*true_acc[0] + true_acc[1]*true_acc[1] + true_acc[2] * true_acc[2])
     friction_force = acc_abs * mass
     cof = friction_force / weight
-    print("cof is %f",cof)
+    print("cof is",cof)
     
 def cof():
     rospy.init_node('cof', anonymous=True)
 
-    rospy.Subscriber("imu/data", imu, imu_data)
+    rospy.Subscriber("imu/data", Imu, imu_data)
     # spin() simply keeps python from exiting until this node is stopped
     rospy.spin()
-
-def talker():
-    pub = rospy.Publisher('chatter', String, queue_size=10)
-    rospy.init_node('talker', anonymous=True)
-    rate = rospy.Rate(10) # 10hz
-    while not rospy.is_shutdown():
-        hello_str = "hello world %s" % rospy.get_time()
-        rospy.loginfo(hello_str)
-        pub.publish(hello_str)
-        rate.sleep()
-
-
 
 if __name__ == '__main__':
     cof()

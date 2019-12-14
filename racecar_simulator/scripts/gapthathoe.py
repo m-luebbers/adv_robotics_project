@@ -13,11 +13,12 @@ import numpy as np
 import time
 
 # Set constants
-MAX_SPEED = 0.35
-MIN_SPEED = -0.05
+MAX_SPEED = 0.3
+MIN_SPEED = 0
 MAX_ANGLE = 0.54
-SERVO_ACCELERATION = 0.05
-DRIVE_ACCELERATION = 0.02
+SERVO_ACCELERATION = 0.04
+DRIVE_ACCELERATION = 0.01
+TURN_ANGLE = 0.54
 
 ## Configure servo command channel
 # Servo -0.54(left) to + 0.54(right)
@@ -40,12 +41,14 @@ s_angle = 0
 
 raw_input("Press Enter to RUMBLEEEE")
 
+pub = rospy.Publisher('/pololu/command', MotorCommand, queue_size=1)
+
 # initialize variables
 car_state = 1
 time_start = time.time()
 
 def PID(servo_error, previous_angle):
-    kp = 0.01/1.1
+    kp = 0.01/1.2
     u = kp*servo_error
     new_angle = max(min(u,MAX_ANGLE), -MAX_ANGLE)
     # return new_angle
@@ -60,7 +63,6 @@ def callback(data):
 	global s_angle
 	global car_state
 	global time_start
-	turn_angle = .54
 	
 	# remove all zero values from data
 	x_zeroless = [ix for ix in data.data if ix != 0]
@@ -77,32 +79,33 @@ def callback(data):
 	# find the gap and how far it is from center
 	index_max = np.argwhere(x == np.amax(x))
 	if len(index_max) > 1:
-		index_max = np.average(index_max) 	
-	center_bin_delta = index_max - round(N/2)
+		index_max = np.average(index_max)
+	center_bin_delta = index_max-2 - round(N/2)
 
 
 	# scale speed by x_mid
-	mid = x[int(round(N/2))]
+	x_mid = x[int(round(N/2))]
 	drive_commands.position = min(x_mid/10*MAX_SPEED + MIN_SPEED, MAX_SPEED)
 	
 	time_elapsed = time.time()-time_start
 	if car_state == 1:				# first straightaway
 		s_angle = PID(center_bin_delta,s_angle)
-		if time_elapsed > 2.7: 		# wait a while before slowing down and turning
-			drive_commands.position = drive_commands.position*2.2/time_elapsed	# *2 worked pretty well
+		if time_elapsed > 3: 		# wait a while before slowing down and turning
+			drive_commands.acceleration = 0.02
+			drive_commands.position = drive_commands.position*1.5/time_elapsed	# *2 worked pretty well
 			if max(x) < 9.5:		# start turning when all values are below a threshold 
 				print("state 1.5")
 				car_state = 1.5
 				time_start = time.time()
 	elif car_state == 1.5:			# first turn
-		servo_commands.acceleration = 0.05
-		drive_commands.acceleration = 0.045
+		servo_commands.acceleration = 0.04
+		drive_commands.acceleration = 0.01
 		if time_elapsed < 0.6: 
-			s_angle = turn_angle
-			drive_commands.position = 0
+			s_angle = TURN_ANGLE
+			drive_commands.position = 0.05
 			print("Yo need to sloooow the fuck down")
 		elif time_elapsed < 1:
-			#s_angle = -turn_angle*.7
+			#s_angle = -TURN_ANGLE*.7
 			drive_commands.acceleration = 0.01
 			drive_commands.position = 0.1
 			print("Hide your girl cause we Psliding into dat hole")
@@ -113,21 +116,21 @@ def callback(data):
 			servo_commands.acceleration = SERVO_ACCELERATION
 			drive_commands.acceleration = DRIVE_ACCELERATION
 	elif car_state == 2:			# second straightaway
-        s_angle = PID(center_bin_delta,s_angle)
+		s_angle = PID(center_bin_delta,s_angle)
 		if time_elapsed > 5:
 			drive_commands.position = drive_commands.position*2.5/time_elapsed
-			if x_mid < 8:
+			if max(x) < 8:
 				car_state = 2.5 #enters turning corner
 				print("state 2.5")
 				time_start = time.time()
 	elif car_state == 2.5:			# second turn
 		servo_commands.acceleration = 0
 		if time_elapsed < 0.6:
-			s_angle = turn_angle
-			drive_commands.position = 0
+			s_angle = TURN_ANGLE
+			drive_commands.position = 0.1
 			print("Yo need to sloooow the fuck down too damn fast again")
 		elif time_elapsed < 1:
-			#s_angle = turn_angle
+			#s_angle = TURN_ANGLE
 			drive_commands.acceleration = 0.01
 			drive_commands.position = 0.1 
 			print("Hide your girl cause we Psliding into dat other hole")
@@ -148,7 +151,6 @@ def callback(data):
 def depth_data_processor():
     #Data from the realsense
 	rospy.init_node("depth_data_processor")
-	pub = rospy.Publisher('/pololu/command', MotorCommand, queue_size=1)
 	pub.publish(drive_commands)
 	rospy.Subscriber('/depth_row', Float32MultiArray, callback)
 
