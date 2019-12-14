@@ -4,7 +4,7 @@ servo:
   pololu_id: 18
 
   motor_id: 3
-  init: 1650
+  init: 1350
   min: 1000
   max: 2000
   reverse: false
